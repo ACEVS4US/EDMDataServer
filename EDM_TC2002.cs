@@ -83,23 +83,35 @@ namespace EDM_Data_Server
             //call do measure
             try
             {
+                //s_port.WriteLine("%R1Q,0:\r\n");
+                //string line = s_port.ReadLine();
+
                 s_port.WriteLine("%R1Q,2008:1,1\r\n");
                 string line = s_port.ReadLine();
                 int val = parseForReturnCode(line);
                 last_error = processReturnCode((ushort)val);
-                Console.WriteLine(last_error);
+                if (val != 0)
+                {
+                    Console.WriteLine(last_error);
+                    return false;
+                }
 
                 if (val == 0)
                 {
+                    val = -1;
                     s_port.WriteLine("%R1Q,2108:3000,0\r\n");
                     line = s_port.ReadLine();
                     val = parseForReturnCode(line);
                     last_error = processReturnCode((ushort)val);
-                    Console.WriteLine(last_error);
+                    if (val != 0)
+                    {
+                        Console.WriteLine(last_error);
+                        return false;
+                    }
                 }
                 else return false;  //do measure error
 
-                if (val == 0)
+                if(val == 0)
                 {
                     result = ParseForResult(line);
                     return true;
@@ -117,24 +129,37 @@ namespace EDM_Data_Server
 
             try
             {
-                //create a new serial port
-                s_port = new SerialPort(portname,19200,Parity.None,8);
-                s_port.Open();
-                s_port.Write("\n%R1Q,1010:ON\r\n");
-                s_port.Write("\n%R1Q,0:\r\n");
+               
 
-                //We expect to get back "%R1P, 0, 0:RC"
-                s_port.ReadTimeout = 1000;
-                string line = s_port.ReadLine();
-                int val = parseForReturnCode(line);
-                last_error = processReturnCode((ushort)val);
+                    s_port = new SerialPort();
+                    s_port.PortName = portname;
+                    s_port.BaudRate = 9600;
+                    s_port.Parity = Parity.None;
+                    s_port.DataBits = 8;
+                    s_port.StopBits = StopBits.One;
+                    s_port.Handshake = Handshake.XOnXOff;
+                    s_port.ReadTimeout = 5000;
+                    s_port.WriteTimeout = 2000;
+                    s_port.Open();
+                    s_port.DiscardInBuffer();
 
-                if (val == 0)
-                {
-                    return true;
-                }
-                else return false;
 
+                    //create a new serial port
+
+
+                    s_port.Write("%R1Q,0:\r\n");
+                   
+
+                    //We expect to get back "%R1P, 0, 0:RC"
+                    string line = s_port.ReadLine();
+                    int val = parseForReturnCode(line);
+                    last_error = processReturnCode((ushort)val);
+
+                    if (val == 0)
+                    {
+                        return true;
+                    }
+                    else return false;
             }
             catch (IOException)
             {
@@ -144,6 +169,16 @@ namespace EDM_Data_Server
             catch (TimeoutException)
             {
                 s_port.Close();
+                return false;
+            }
+            catch (AccessViolationException)
+            {
+                Console.WriteLine("Serial Port already open");
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.WriteLine("Serial Port already open");
                 return false;
             }
         }
@@ -198,32 +233,50 @@ namespace EDM_Data_Server
         {
 
             int index_of_colon = parseme.IndexOf(':');
-            string return_substring = parseme.Substring(index_of_colon + 1);
+            string return_substring = parseme.Substring(index_of_colon+1);
 
             if (index_of_colon == -1)
             {
                 return 255;
             }
 
+            //find the index of the comma if it exists
+            int index_of_comma = return_substring.IndexOf(',');
+            if (index_of_comma != -1)
+            {
+                return_substring = return_substring.Remove(index_of_comma);
+            }
             int return_value=0;
             int base10 = 1;
+            
+            
             bool has_return_value = false;
-            foreach (char c in return_substring)
+
+            try
             {
-                ushort c_ = (ushort) c;
+                return_value = (Convert.ToInt32(return_substring));
+                has_return_value = true;
+            }
+            catch (FormatException)
+            {
+                has_return_value = false;
+            }
+            //foreach (char c in return_substring)
+            //{
+             //   ushort c_ = (ushort) c;
 
                 //check each character to make sure they are numeric
-                if ((c_ >= 32 && c_ <= 57))
-                {
-                    has_return_value = true;
-                    return_value = (return_value*base10) + c_;
-                    base10 = base10*10;
-                }
-                else if (!(c_ >= 32 && c_ <= 57) && has_return_value)
-                {
-                    break;  //break if we've stopped getting numeric characters
-                }
-            }
+             //   if ((c_ >= 32 && c_ <= 57))
+             //   {
+              //      has_return_value = true;
+               //     return_value = (return_value*base10) + c_;
+              //      base10 = base10*10;
+            //    }
+            //    else if (!(c_ >= 32 && c_ <= 57) && has_return_value)
+             //   {
+             //       break;  //break if we've stopped getting numeric characters
+             //   }
+            //}
 
             if (has_return_value)
             {
@@ -256,11 +309,12 @@ namespace EDM_Data_Server
             //find the first comma if it exists
             string[] split_up_by_commas = line.Split(delimeter);
             
+            double result1=0.0;
             double result=0.0;
-
             try
             {
-                result = Convert.ToDouble(split_up_by_commas[comma_count]);
+                result1 = Convert.ToDouble(split_up_by_commas[comma_count]);
+                result = Math.Round(result1, 4, MidpointRounding.AwayFromZero);
             }
             catch (FormatException)
             {
