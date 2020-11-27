@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Net.Sockets;
+using System.Net.NetworkInformation;
 using System.IO;
 using System.Net;
 using System.IO.Ports;
@@ -14,32 +16,75 @@ namespace EDM_Data_Server
     {
         static void Main(string[] args)
         {
-
+            bool reading_2nd_laser = false;
             SerialEDM serial = null;
             bool manual_reading = false;
             ManualInstrumentReading reader = null;
             Laser laser = null;
-            //SerialPort s_port;
-            TcpListener server = null;
-            double standard_deviation = 0.0;
+            EthernetServer server1 = new EthernetServer();
+            WifiServer server2 = new WifiServer();
 
-            bool reading_2nd_laser = false;
-            
-           
             //Get user input on the type of EDM they want to use.
             Console.WriteLine("Select the type of instrument you are using:\r\n1   TC2002\r\n2   DI2002\r\n3   HP5519A\r\n4   Rocky\r\n5   Leica Disto D810 Touch\r\n");
-            while(true){
-                    string line = Console.ReadLine();
+            while (true)
+            {
+                string line = Console.ReadLine();
+                bool valid_line = false;
+                bool initok = false;
 
                 if (line.Equals("1"))
                 {
-                    serial = new EDM_TC2002();
+                    string lin = "";
+
+                    while (true)
+                    {
+                        Console.WriteLine("Enter the COM Port the EDM is connected to e.g COM11");
+                        lin = Console.ReadLine();
+                        if (lin.Contains("COM") && lin.Length > 3)
+                        {
+                            string sub = lin.Substring(3, lin.Length - 3);
+                            int num = 0;
+                            if (int.TryParse(sub, out num))
+                            {
+                                //The user has correctly entered the COM string, now let's test if it is a valid connection
+                                serial = new EDM_TC2002(lin, ref initok);
+                                if (initok)
+                                {
+                                    Console.WriteLine("Successfully connected to TC2002");
+                                    break;
+                                }
+                                else Console.WriteLine("Connection Unsuccessful");
+                            }
+                        }
+                    }
                     break;
                 }
 
                 else if (line.Equals("2"))
                 {
-                    serial = new EDM_DI2002();
+                    string lin = "";
+                    while (true)
+                    {
+                        Console.WriteLine("Enter the COM Port the EDM is connected to e.g COM11");
+
+                        lin = Console.ReadLine();
+                        if (lin.Contains("COM") && lin.Length > 3)
+                        {
+                            string sub = lin.Substring(3, lin.Length - 3);
+                            int num = 0;
+                            if (int.TryParse(sub, out num))
+                            {
+                                //The user has correctly entered the COM string, now let's test if it is a valid connection
+                                serial = new EDM_DI2002(lin, ref initok);
+                                if (initok)
+                                {
+                                    Console.WriteLine("Successfully connected to DI2002");
+                                    break;
+                                }
+                                else Console.WriteLine("Connection Unsuccessful");
+                            }
+                        }
+                    }
                     break;
                 }
                 else if (line.Equals("3"))
@@ -70,20 +115,13 @@ namespace EDM_Data_Server
                 }
                 else if (line.Equals("4"))
                 {
-                    double result_ = 0.0;
-                    serial = new EDM_ROCKY();
-
-                    //while (true)
-                    //{
-                    //    System.Threading.Thread.Sleep(1000);
-                    //    serial.ReadEDM(ref result_);
-                    //    Console.WriteLine(result_.ToString());
-                    //}
+                   
+                    serial = new EDM_ROCKY("", ref initok);
                     break;
                 }
                 else if (line.Equals("5"))
                 {
-                    double result_ = 0.0;
+                    
                     reader = new ManualInstrumentReading();
                     manual_reading = true;
                     break;
@@ -93,274 +131,35 @@ namespace EDM_Data_Server
                     Console.WriteLine(LaserErrorMessage.NoDevicesConnected);
                     Console.WriteLine("\r\n");
                 }
-                        
-                    
-                
-
             }
 
-           
+            server1.IP = IPAddress.Parse("192.168.1.1");
+            server1.Port = 16;
+            server1.Serial_EDM = serial;
+            server1.ReadingSecondLaser = reading_2nd_laser;
+            server1.ManualInstrumentReading = reader;
+            server1.ManualReading = manual_reading;
+            server1.LSR = laser;
 
-            try
+            //listen over the ethernet adapter for a client connection;
+            Thread ethernet_listener = new Thread(new ThreadStart(server1.Listen));
+            ethernet_listener.Start();
+
+            server2.IP = IPAddress.Parse("192.168.1.1");
+            server2.Port = 16;
+            server2.Serial_EDM = serial;
+            server2.ReadingSecondLaser = reading_2nd_laser;
+            server2.ManualInstrumentReading = reader;
+            server2.ManualReading = manual_reading;
+            server2.LSR = laser;
+
+            //listen over the ethernet adapter for a client connection;
+            Thread wifi_listener = new Thread(new ThreadStart(server2.Listen));
+            wifi_listener.Start();
+
+            while (true)
             {
-                // Set the TcpListener on port 13000.
-                Int32 port = 16;
-                string host = Environment.MachineName;
-                IPAddress[] localAddr = Dns.GetHostAddresses(host);
-
-                int index2 = 0;
-                foreach (IPAddress addr in localAddr)
-                {
-                    if (addr.AddressFamily == AddressFamily.InterNetwork)
-                    {
-                        break;
-                    }
-                    index2++;
-                }
-
-                // TcpListener server = new TcpListener(port);
-                server = new TcpListener(localAddr[index2], port);
-
-                // Start listening for client requests.
-                server.Start();
-
-                // Buffer for reading data
-                Byte[] bytes = new Byte[256];
-                String data = null;
-
-                String response = null;
-                int averaging = 1;
-              
-                
-
-                // Enter the listening loop. 
-                while (true)
-                {
-                    Console.Write("Waiting for a connection... ");
-
-                    // Perform a blocking call to accept requests. 
-                    // You could also user server.AcceptSocket() here.
-                    TcpClient client = server.AcceptTcpClient();
-                    Console.WriteLine("Connected!");
-
-
-                    data = null;
-
-                    // Get a stream object for reading and writing
-                    NetworkStream stream = client.GetStream();
-
-                    int i;
-                    try
-                    {
-                        // Loop to receive all the data sent by the client. 
-                        while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
-                        {
-                            // Translate data bytes to a ASCII string.
-                            data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                            byte[] msg = null;
-                            Console.WriteLine("Received: {0}", data);
-                            string content = "";
-                            if (data.Contains("Averaging:"))
-                            {
-                                int index = data.IndexOf(':');
-                                content = data.Substring(index + 1);
-                                data = data.Remove(index);
-                            }
-
-                            switch (data)
-                            {
-                                case "Averaging":
-                                    try
-                                    {
-                                        averaging = Convert.ToInt32(content);
-                                        response = "true";
-                                        msg = System.Text.Encoding.ASCII.GetBytes(response);
-                                        // Send back a response.
-                                        stream.Write(msg, 0, msg.Length);
-                                        Console.WriteLine("Sent: {0}\n", response);
-                                    }
-                                    catch (FormatException)
-                                    {
-                                        response = "false";
-                                        msg = System.Text.Encoding.ASCII.GetBytes(response);
-                                        // Send back a response.
-                                        stream.Write(msg, 0, msg.Length);
-                                        Console.WriteLine("Sent: {0}\n", response);
-
-                                    }
-                                    break;
-                                case "Reset":
-
-                                    //reset the Total Station or EDM depending on what was selected
-                                    if (!reading_2nd_laser)
-                                    {
-                                        if (!serial.SetUpEDM())
-                                        {
-                                            Console.WriteLine("EDM setup returned error code:" + serial.GetLastError);
-
-                                            response = "false";
-                                        }
-                                        else response = "true";
-
-                                        msg = System.Text.Encoding.ASCII.GetBytes(response);
-                                        // Send back a response.
-                                        stream.Write(msg, 0, msg.Length);
-                                        Console.WriteLine("Sent: {0}\n", response);
-                                    }
-                                    //otherwise we are reading the laser (special case)
-                                    else
-                                    {
-                                        laser.Reset();
-
-                                        response = "true";
-                                        msg = System.Text.Encoding.ASCII.GetBytes(response);
-                                        // Send back a response.
-                                        stream.Write(msg, 0, msg.Length);
-                                        Console.WriteLine("Sent: {0}\n", response);
-                                    }
-                                    break;
-                                case "Measure":
-                                    double result = 0.0;
-                                    double summed_result = 0.0;
-
-                                    if (!reading_2nd_laser)
-                                    {
-                                        double[] values = new double[averaging];
-                                        for (int j = 0; j < averaging; j++)
-                                        {
-                                            if (manual_reading)
-                                            {
-                                                reader.Read(ref result);
-                                            }
-                                            else
-                                            {
-                                                while (!serial.ReadEDM(ref result))
-                                                {
-                                                    Console.WriteLine("EDM setup returned error code:" + serial.GetLastError);
-                                                }
-                                            }
-                                            values[j] = result;
-                                            Console.WriteLine("Measurement {0}: {1}", j, result.ToString());
-                                            summed_result = (summed_result + result);
-                                        }
-
-                                        //compute the average
-                                        result = summed_result / averaging;
-
-
-                                        double population_variance = 0;
-                                        //compute the variances using the averaged result
-                                        foreach (double length in values)
-                                        {
-                                            double deviation = length - result;
-                                            population_variance += Math.Pow(deviation, 2);
-                                        }
-
-                                        //the population variance
-                                        if (averaging == 1)
-                                        {
-                                            population_variance = 0;
-                                      
-                                        }
-                                        else
-                                        {
-                                            population_variance = population_variance / (averaging-1);
-                                        }
-                                        //The standard deviation
-                                        standard_deviation = Math.Sqrt(population_variance);
-                                        response = result.ToString();
-
-                                        msg = System.Text.Encoding.ASCII.GetBytes(response);
-
-                                        // Send back a response.
-                                        stream.Write(msg, 0, msg.Length);
-                                        Console.WriteLine("Sent: {0}", response);
-                                    }
-                                    else
-                                    {
-                                        double[] values = new double[averaging];
-                                        for (int j = 0; j < averaging; j++)
-                                        {
-                                            try
-                                            {
-                                                result = laser.ReadSample();
-
-                                            }
-                                            catch (ArgumentException e)
-                                            {
-                                                Console.WriteLine(e);
-                                                break;
-                                            }
-
-                                            values[j] = result;
-                                            Console.WriteLine("Measurement {0}: {1}", j, result.ToString());
-                                            summed_result = (summed_result + result);
-
-
-
-                                        }
-                                        result = (summed_result / averaging);
-                                        response = result.ToString();
-
-                                        double population_variance = 0;
-                                        //compute the variances using the averaged result
-                                        foreach (double length in values)
-                                        {
-                                            double deviation = length - result;
-                                            population_variance += Math.Pow(deviation, 2);
-                                        }
-
-                                        //the population variance
-                                        if (averaging == 1)
-                                        {
-                                            population_variance = 0;
-
-                                        }
-                                        else
-                                        {
-                                            population_variance = population_variance / (averaging - 1);
-                                        }
-
-                                        //The standard deviation
-                                        standard_deviation = Math.Sqrt(population_variance);
-
-                                        //format the response
-                                        msg = System.Text.Encoding.ASCII.GetBytes(response);
-
-                                        // Send back a response.
-                                        stream.Write(msg, 0, msg.Length);
-                                        Console.WriteLine("Sent: {0}", response);
-                                    }
-                                    break;
-
-                                case "Stdev":
-                                    string stdev = standard_deviation.ToString();
-                                    msg = System.Text.Encoding.ASCII.GetBytes(stdev);
-                                    stream.Write(msg, 0, msg.Length);
-                                    Console.WriteLine("Standard Deviation Sent: {0} ", stdev);
-                                    break;
-                                case "Turnoff":
-                                    break;
-                            }
-                        }
-                    }
-                    catch (IOException)
-                    {
-                        continue;
-                    }
-
-                    // Shutdown and end connection
-                    client.Close();
-                }
-            }
-            catch (SocketException e)
-            {
-                Console.WriteLine("SocketException: {0}", e);
-            }
-            finally
-            {
-                // Stop listening for new clients.
-                server.Stop();
+                Thread.Sleep(1000);
             }
 
 
