@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EDM_Data_Server
 {
-    class ManualInstrumentReading
+    public class ManualInstrumentReading
     {
         private double result = 0.0;
 
