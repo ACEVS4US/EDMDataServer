@@ -10,6 +10,9 @@ namespace EDM_Data_Server
 {
     public class EDM_ROCKY:SerialEDM
     {
+        public EDM_ROCKY(string port_, ref bool init_ok) : base("", ref init_ok) 
+        {
+        }
 
         public override bool COMInit(string portname)
         {
