@@ -13,21 +13,32 @@ namespace EDM_Data_Server
 
         public static SerialPort s_port;
         protected string last_error = "ERROR code not specified";
-        public SerialEDM()
+        public SerialEDM(string port_,ref bool init_ok)
         {
             //get the names of all the com ports
-            string[] ports = SerialPort.GetPortNames();
+            
 
-            foreach (string portname in ports)
+            if (port_.Contains("COM"))
             {
-                if (COMInit(portname))
+                //The com port has been specified by the user
+                if (COMInit(port_))
                 {
-                    break;   //this sets the correct serial port and the port is now open for comunication
+                    init_ok = true;
                 }
+              
             }
-            if (!s_port.IsOpen)
+            else
             {
-                Console.WriteLine("Could not find a valid serial COM port");
+                string[] ports = SerialPort.GetPortNames();
+                //In this case the user had not specified a valid com port
+                foreach (string portname in ports)
+                {
+                    if (COMInit(portname))
+                    {
+                        init_ok = true;
+                        break;   //this sets the correct serial port and the port is now open for comunication
+                    }
+                }
             }
         }
 
@@ -42,6 +53,11 @@ namespace EDM_Data_Server
             {
                 last_error = value;
             }
+        }
+        public bool PortOpen()
+        {
+            if (s_port.IsOpen) return true;
+            else return false;
         }
 
         public abstract bool SetUpEDM();
