@@ -142,7 +142,7 @@ namespace EDM_Data_Server
         public const short IDLE = 255;
     }
 
-    class Laser
+    public class Laser
     {
         
         //LaserUpdateGui invoke_gui;
