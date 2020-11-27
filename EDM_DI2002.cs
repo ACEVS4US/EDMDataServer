@@ -60,7 +60,7 @@ namespace EDM_Data_Server
         
         
        
-        public EDM_DI2002()
+        public EDM_DI2002(string port_, ref bool init_ok):base(port_,ref init_ok)
         {
         }
 
