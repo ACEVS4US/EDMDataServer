@@ -36,12 +36,11 @@ namespace EDM_Data_Server
 
     public class EDM_TC2002:SerialEDM
     {
-        
-       
-       
-        public EDM_TC2002()
+
+
+
+        public EDM_TC2002(string port_, ref bool init_ok):base(port_, ref init_ok)
         {
-            
             
         }
 
@@ -129,8 +128,6 @@ namespace EDM_Data_Server
 
             try
             {
-               
-
                     s_port = new SerialPort();
                     s_port.PortName = portname;
                     s_port.BaudRate = 9600;
@@ -152,9 +149,10 @@ namespace EDM_Data_Server
 
                     //We expect to get back "%R1P, 0, 0:RC"
                     string line = s_port.ReadLine();
-                    int val = parseForReturnCode(line);
+                    int val = -1;
+                    val = parseForReturnCode(line);
                     last_error = processReturnCode((ushort)val);
-
+                    
                     if (val == 0)
                     {
                         return true;
