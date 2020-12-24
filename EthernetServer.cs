@@ -62,12 +62,12 @@ namespace EDM_Data_Server
                 // Enter the listening loop. 
                 while (Enabled)
                 {
-                    Console.Write("Waiting for a connection... ");
+                    Console.Write("Waiting for a connection over the ethernet adaptor... ");
 
                     // Perform a blocking call to accept requests. 
                     // You could also use server.AcceptSocket() here.
                     TcpClient client = server.AcceptTcpClient();
-                    Console.WriteLine("Connected!");
+                    Console.WriteLine("Connected over ethernet");
 
 
                     data = null;
