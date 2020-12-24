@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO.Ports;
 using System.IO;
+using System.Threading;
 
 namespace EDM_Data_Server
 {
@@ -141,14 +142,16 @@ namespace EDM_Data_Server
                     s_port.DiscardInBuffer();
 
 
-                    //create a new serial port
+                //create a new serial port
 
 
-                    s_port.Write("%R1Q,0:\r\n");
-                   
+                s_port.Write("%R1Q,0:\r\n");
+                Thread.Sleep(2000);
+                s_port.Write("%R1Q,0:\r\n");
 
-                    //We expect to get back "%R1P, 0, 0:RC"
-                    string line = s_port.ReadLine();
+
+                //We expect to get back "%R1P, 0, 0:RC"
+                string line = s_port.ReadLine();
                     int val = -1;
                     val = parseForReturnCode(line);
                     last_error = processReturnCode((ushort)val);
