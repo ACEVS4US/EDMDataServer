@@ -146,7 +146,7 @@ namespace EDM_Data_Server
 
 
                 s_port.Write("%R1Q,0:\r\n");
-                Thread.Sleep(2000);
+                Thread.Sleep(3000);
                 s_port.Write("%R1Q,0:\r\n");
 
 
