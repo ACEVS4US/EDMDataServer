@@ -23,10 +23,10 @@ namespace EDM_Data_Server
 
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
             {
-                if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+                if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
                 {
 
-                    if (ni.Name.Equals("Wireless Network Connection"))
+                    if (ni.Name.Equals("Wi-Fi"))
                     {
                         Console.WriteLine();
                         Console.WriteLine(ni.Name);
