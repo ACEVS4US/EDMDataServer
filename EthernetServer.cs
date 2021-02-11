@@ -23,10 +23,10 @@ namespace EDM_Data_Server
 
             foreach (NetworkInterface ni in NetworkInterface.GetAllNetworkInterfaces())
             {
-                if (ni.NetworkInterfaceType == NetworkInterfaceType.Wireless80211 || ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
+                if (ni.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
                 {
 
-                    if (ni.Name.Equals("Local Area Connection"))
+                    if (ni.Name.Equals("Ethernet"))
                     {
                         Console.WriteLine(ni.Name);
                         foreach (UnicastIPAddressInformation ip in ni.GetIPProperties().UnicastAddresses)
