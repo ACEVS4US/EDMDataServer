@@ -5,3 +5,10 @@ C:\Users\c.young.CI\Documents\GitHub\EDMDataServer\bin\Debug\EDM Data Server.exe
 C:\Users\c.young.CI\Documents\GitHub\EDMDataServer\bin\Debug\EDM Data Server.pdb
 C:\Users\c.young.CI\Documents\GitHub\EDMDataServer\obj\Debug\EDM Data Server.exe
 C:\Users\c.young.CI\Documents\GitHub\EDMDataServer\obj\Debug\EDM Data Server.pdb
+C:\Users\Tunnel\Documents\GitHub\EDMDataServer\bin\Debug\EDM Data Server.exe.config
+C:\Users\Tunnel\Documents\GitHub\EDMDataServer\bin\Debug\EDM Data Server.exe
+C:\Users\Tunnel\Documents\GitHub\EDMDataServer\bin\Debug\EDM Data Server.pdb
+C:\Users\Tunnel\Documents\GitHub\EDMDataServer\obj\Debug\EDM Data Server.csprojAssemblyReference.cache
+C:\Users\Tunnel\Documents\GitHub\EDMDataServer\obj\Debug\EDM Data Server.csproj.CoreCompileInputs.cache
+C:\Users\Tunnel\Documents\GitHub\EDMDataServer\obj\Debug\EDM Data Server.exe
+C:\Users\Tunnel\Documents\GitHub\EDMDataServer\obj\Debug\EDM Data Server.pdb
