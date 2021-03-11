@@ -142,13 +142,8 @@ namespace EDM_Data_Server
                     s_port.DiscardInBuffer();
 
 
-                //create a new serial port
-
-
+               
                 s_port.Write("%R1Q,0:\r\n");
-                Thread.Sleep(3000);
-                s_port.Write("%R1Q,0:\r\n");
-
 
                 //We expect to get back "%R1P, 0, 0:RC"
                 string line = s_port.ReadLine();
