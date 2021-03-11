@@ -285,7 +285,7 @@ namespace EDM_Data_Server
             }
             catch (SocketException e)
             {
-                Console.WriteLine("SocketException: {0}", e);
+                //Console.WriteLine("SocketException: {0}", e);
             }
             finally
             {
